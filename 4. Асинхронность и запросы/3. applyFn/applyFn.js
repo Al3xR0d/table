@@ -16,7 +16,7 @@ function applyFn(dataArr, callback) {
   // Пишите код здесь
   let succeeded = [];
   let errors = [];
-  dataArr.map(item => {
+  dataArr.forEach(item => {
     try {
       succeeded.push(callback(item));
     } catch (err) {

@@ -5,7 +5,7 @@ function getUsersInfo(callback) {
   getUsersIds(item => {
     const users = [];
     let count = 0;
-    item.map((value, index) => {
+    item.forEach((value, index) => {
       getUserInfo(value, userInfo => {
         users[index] = userInfo;
         count++;

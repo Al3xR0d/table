@@ -13,12 +13,14 @@ function increaseSalary() {
       api.setEmployeeSalary(idEmployee, newSalary)
     )
     .then(updated =>
-      api.notifyEmployee(
-        updated.id,
-        `Привет, ${updated.name}! Поздравляем, твоя новая зарплата = ${updated.salary}!`
-      )
+      api
+        .notifyEmployee(
+          updated.id,
+          `Привет, ${updated.name}! Поздравляем, твоя новая зарплата = ${updated.salary}!`
+        )
+        .then(() => true)
     )
-    .catch(error => api.notifyAdmin(error));
+    .catch(error => api.notifyAdmin(error).then(() => false));
 }
 
 const api = {

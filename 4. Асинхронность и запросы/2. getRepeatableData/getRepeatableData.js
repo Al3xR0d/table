@@ -22,7 +22,9 @@ class TemporaryError extends Error {
 function getRepeatableData(getData, key, maxRequestsNumber) {
   // Пишите код здесь
 
-  // while (counter <= maxRequestsNumber) {
+  if (maxRequestsNumber == -1) {
+    throw new AttemptsLimitExceeded();
+  }
   try {
     return getData(key);
   } catch (err) {
@@ -30,16 +32,10 @@ function getRepeatableData(getData, key, maxRequestsNumber) {
       throw new NotFoundError();
     }
     if (err.name === "TemporaryError") {
-      --maxRequestsNumber;
-      if (-1 === maxRequestsNumber) {
-        throw new AttemptsLimitExceeded();
-      } else return getRepeatableData(getData, key, maxRequestsNumber);
+      return getRepeatableData(getData, key, maxRequestsNumber - 1);
     }
   }
-  // }
 }
-
-let counter = -1;
 
 const getData = name => "Hello, " + name;
 const res = getRepeatableData(getData, "Ivan", 3);
