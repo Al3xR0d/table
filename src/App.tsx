@@ -93,19 +93,21 @@ export default function App() {
 
   const [sort, setSort] = useState<SortState | null>(null);
 
-  const Arrow = () => {
+  const getArrow = () => {
     return sort?.type === Sort.ASC ? <>↑</> : <>↓</>;
   };
+
+  const columns = users.length > 0 ? (Object.keys(users[0]) as (keyof User)[]) : [];
 
   const header = columns.map((col) => {
     return (
       <th
-        key={col.key}
+        key={col}
         className="cell"
         onClick={() => {
-          setSort(function (prev) {
+          setSort((prev) => {
             let newType: Sort;
-            if (!prev || col.key !== prev.header) {
+            if (!prev || col !== prev.header) {
               newType = Sort.ASC;
             } else if (prev.type === Sort.ASC) {
               newType = Sort.DESC;
@@ -116,13 +118,12 @@ export default function App() {
             }
             return {
               type: newType,
-              header: col.key,
+              header: col,
             };
           });
         }}
       >
-        {col.label}
-        {sort && col.key === sort.header && <Arrow />}
+        {defaultColumnNames[col]} {sort && col === sort.header && getArrow()}
       </th>
     );
   });
@@ -143,9 +144,9 @@ export default function App() {
 
   const personalInfo = data.map((user) => (
     <tr key={user.id} className={user.salary ? undefined : 'withoutSalary'}>
-      {columns.map((col: Column) => (
-        <td key={col.key} className="cell">
-          {renderCell(user[col.key], col.key)}
+      {columns.map((col: keyof User) => (
+        <td key={col} className="cell">
+          {renderCell(user[col], col)}
         </td>
       ))}
     </tr>
@@ -201,12 +202,22 @@ function useSorted(users: User[], sort: SortState | null): User[] {
   });
 }
 
-const columns: Column[] = [
-  { key: 'id', label: 'порядковый номер' },
-  { key: 'name', label: 'имя' },
-  { key: 'surname', label: 'фамилия' },
-  { key: 'birthday', label: 'дата рождения' },
-  { key: 'isAdmin', label: 'админ' },
-  { key: 'salary', label: 'зарплата' },
-  { key: 'hobbies', label: 'хобби' },
-];
+const defaultColumnNames: Record<string, string> = {
+  id: 'Порядковый номер',
+  name: 'Имя',
+  surname: 'Фамилия',
+  birthday: 'Дата рождения',
+  isAdmin: 'Админ',
+  salary: 'Зарплата',
+  hobbies: 'Хобби',
+};
+
+// const columns: Column[] = [
+//   { key: 'id', label: 'порядковый номер' },
+//   { key: 'name', label: 'имя' },
+//   { key: 'surname', label: 'фамилия' },
+//   { key: 'birthday', label: 'дата рождения' },
+//   { key: 'isAdmin', label: 'админ' },
+//   { key: 'salary', label: 'зарплата' },
+//   { key: 'hobbies', label: 'хобби' },
+// ];
