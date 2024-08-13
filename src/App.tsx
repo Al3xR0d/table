@@ -21,11 +21,6 @@ enum Sort {
   DESC,
 }
 
-type Column = {
-  key: keyof User;
-  label: string;
-};
-
 const mockGetUsersList = (): Promise<User[]> => {
   return new Promise((res) => {
     setTimeout(
@@ -86,6 +81,7 @@ const mockGetUsersList = (): Promise<User[]> => {
 
 export default function App() {
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsersIds, setSelectedUsersIds] = useState<string[]>([]);
 
   useEffect(() => {
     mockGetUsersList().then(setUsers);
@@ -99,34 +95,49 @@ export default function App() {
 
   const columns = users.length > 0 ? (Object.keys(users[0]) as (keyof User)[]) : [];
 
-  const header = columns.map((col) => {
-    return (
-      <th
-        key={col}
-        className="cell"
-        onClick={() => {
-          setSort((prev) => {
-            let newType: Sort;
-            if (!prev || col !== prev.header) {
-              newType = Sort.ASC;
-            } else if (prev.type === Sort.ASC) {
-              newType = Sort.DESC;
-            } else if (prev.type === Sort.DESC) {
-              return null;
-            } else {
-              return prev;
-            }
-            return {
-              type: newType,
-              header: col,
-            };
+  const header = [
+    <th className={`cell ${selectedUsersIds.length === users.length ? 'checked' : ''}`}>
+      <input
+        type="checkbox"
+        checked={selectedUsersIds.length === users.length}
+        onChange={() => {
+          setSelectedUsersIds((prev) => {
+            if (prev.length === users.length) {
+              return [];
+            } else return users.map((user) => user.id);
           });
         }}
-      >
-        {defaultColumnNames[col]} {sort && col === sort.header && getArrow()}
-      </th>
-    );
-  });
+      />{' '}
+    </th>,
+    ...columns.map((col) => {
+      return (
+        <th
+          key={col}
+          className="cell"
+          onClick={() => {
+            setSort((prev) => {
+              let newType: Sort;
+              if (!prev || col !== prev.header) {
+                newType = Sort.ASC;
+              } else if (prev.type === Sort.ASC) {
+                newType = Sort.DESC;
+              } else if (prev.type === Sort.DESC) {
+                return null;
+              } else {
+                return prev;
+              }
+              return {
+                type: newType,
+                header: col,
+              };
+            });
+          }}
+        >
+          {defaultColumnNames[col]} {sort && col === sort.header && getArrow()}
+        </th>
+      );
+    }),
+  ];
 
   function renderCell(item: User[keyof User], el: keyof User) {
     if (item instanceof Date) {
@@ -143,7 +154,25 @@ export default function App() {
   const data = useSorted(users, sort);
 
   const personalInfo = data.map((user) => (
-    <tr key={user.id} className={user.salary ? undefined : 'withoutSalary'}>
+    <tr
+      key={user.id}
+      className={`${user.salary ? '' : 'withoutSalary'} ${selectedUsersIds.includes(user.id) ? 'checked' : ''}`}
+    >
+      <th className="cell">
+        <input
+          type="checkbox"
+          checked={selectedUsersIds.includes(user.id)}
+          onChange={() => {
+            setSelectedUsersIds((prev) => {
+              if (prev.includes(user.id)) {
+                return prev.filter((id) => id !== user.id);
+              } else {
+                return prev.concat(user.id);
+              }
+            });
+          }}
+        />{' '}
+      </th>
       {columns.map((col: keyof User) => (
         <td key={col} className="cell">
           {renderCell(user[col], col)}
@@ -154,12 +183,25 @@ export default function App() {
 
   return (
     <div className="App">
-      <table className="table">
-        <thead>
-          <tr>{header}</tr>
-        </thead>
-        <tbody>{personalInfo}</tbody>
-      </table>
+      <button
+        disabled={selectedUsersIds.length === 0}
+        onClick={() => {
+          setUsers((prev) => {
+            return prev.filter((user) => !selectedUsersIds.includes(user.id));
+          });
+          setSelectedUsersIds([]);
+        }}
+      >
+        удалить
+      </button>
+      {users.length > 0 ? (
+        <table className="table">
+          <thead>
+            <tr>{header}</tr>
+          </thead>
+          <tbody>{personalInfo}</tbody>
+        </table>
+      ) : null}
     </div>
   );
 }
@@ -211,13 +253,3 @@ const defaultColumnNames: Record<string, string> = {
   salary: 'Зарплата',
   hobbies: 'Хобби',
 };
-
-// const columns: Column[] = [
-//   { key: 'id', label: 'порядковый номер' },
-//   { key: 'name', label: 'имя' },
-//   { key: 'surname', label: 'фамилия' },
-//   { key: 'birthday', label: 'дата рождения' },
-//   { key: 'isAdmin', label: 'админ' },
-//   { key: 'salary', label: 'зарплата' },
-//   { key: 'hobbies', label: 'хобби' },
-// ];
