@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import { Button, Popover } from 'antd';
 
 interface User {
   id: string;
@@ -19,6 +20,10 @@ interface SortState {
 enum Sort {
   ASC,
   DESC,
+}
+
+interface Filters {
+  [key: string]: string | boolean;
 }
 
 const mockGetUsersList = (): Promise<User[]> => {
@@ -82,12 +87,27 @@ const mockGetUsersList = (): Promise<User[]> => {
 export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsersIds, setSelectedUsersIds] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+  const [sort, setSort] = useState<SortState | null>(null);
+  const [filters, setFilters] = useState<Filters>({} as Filters);
+  const [popoverFilters, setPopoverFilters] = useState<Filters>({} as Filters);
+
+  const handleSortedUsers = () => {
+    setFilters(popoverFilters);
+    setOpen(false);
+  };
+
+  const hide = () => {
+    setOpen(false);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+  };
 
   useEffect(() => {
     mockGetUsersList().then(setUsers);
   }, []);
-
-  const [sort, setSort] = useState<SortState | null>(null);
 
   const getArrow = () => {
     return sort?.type === Sort.ASC ? <>↑</> : <>↓</>;
@@ -151,9 +171,10 @@ export default function App() {
     }
   }
 
-  const data = useSorted(users, sort);
+  const filtredUsers = useFilters(users, filters);
+  const sortedUsers = useSorted(filtredUsers, sort);
 
-  const personalInfo = data.map((user) => (
+  const personalInfo = sortedUsers.map((user) => (
     <tr
       key={user.id}
       className={`${user.salary ? '' : 'withoutSalary'} ${selectedUsersIds.includes(user.id) ? 'checked' : ''}`}
@@ -181,19 +202,83 @@ export default function App() {
     </tr>
   ));
 
+  const handleInputChange = (col: keyof User, value: string | boolean) => {
+    setPopoverFilters((prev) => ({
+      ...prev,
+      [col]: value,
+    }));
+  };
+
+  const handleClearInput = () => {
+    setPopoverFilters({} as Filters);
+  };
+
+  const handleClearTable = () => {
+    setPopoverFilters({} as Filters);
+    setFilters((prev) => (prev = {} as Filters));
+  };
+
+  const popoverInfo = [
+    ...columns.map((col) => {
+      return (
+        <table className="table" key={col}>
+          <tbody>
+            <tr>
+              <td className="cell popoverCell">{defaultColumnNames[col]}</td>
+              <td className="cell popoverCell">
+                {col === 'isAdmin' ? (
+                  <input
+                    type="checkbox"
+                    checked={!!popoverFilters[col] as boolean}
+                    onChange={(e) => handleInputChange(col, e.target.checked)}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Введите фильтр"
+                    value={(popoverFilters[col] as string) || ''}
+                    onChange={(e) => handleInputChange(col, e.target.value)}
+                  />
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      );
+    }),
+  ];
+
   return (
     <div className="App">
-      <button
-        disabled={selectedUsersIds.length === 0}
-        onClick={() => {
-          setUsers((prev) => {
-            return prev.filter((user) => !selectedUsersIds.includes(user.id));
-          });
-          setSelectedUsersIds([]);
-        }}
-      >
-        удалить
-      </button>
+      <div className="headButtoms">
+        <Button
+          disabled={selectedUsersIds.length === 0}
+          onClick={() => {
+            setUsers((prev) => {
+              return prev.filter((user) => !selectedUsersIds.includes(user.id));
+            });
+            setSelectedUsersIds([]);
+          }}
+        >
+          Удалить
+        </Button>
+        <Popover
+          content={
+            <span className="popverContent">
+              <a onClick={hide}>Закрыть</a>
+              <a onClick={handleClearInput}>Отмена</a>
+              <a onClick={handleSortedUsers}>Принять</a>
+            </span>
+          }
+          title={popoverInfo}
+          trigger="click"
+          open={open}
+          onOpenChange={handleOpenChange}
+        >
+          <Button type="primary">Настройка таблицы</Button>
+        </Popover>
+        <Button onClick={handleClearTable}>Сброс</Button>
+      </div>
       {users.length > 0 ? (
         <table className="table">
           <thead>
@@ -241,6 +326,31 @@ function useSorted(users: User[], sort: SortState | null): User[] {
     } else if (a.salary && b.salary) {
       return 0;
     } else return 1;
+  });
+}
+
+function useFilters(users: User[], filter: Filters): User[] {
+  return users.filter((user) => {
+    return Object.keys(filter).every((item) => {
+      const filterValue = filter[item];
+      let userValue = user[item as keyof User];
+      if (filterValue === undefined || filterValue === null || filterValue === '') {
+        return true;
+      } else if (typeof filterValue === 'boolean') {
+        if (filterValue) {
+          return userValue === filterValue;
+        } else return userValue === undefined;
+      } else if (typeof filterValue === 'string') {
+        if (userValue instanceof Date) {
+          return userValue.toLocaleDateString().includes(filterValue);
+        } else if (Array.isArray(userValue)) {
+          return userValue.some((hobby) => hobby.toLowerCase().includes(filterValue.toLowerCase()));
+        } else {
+          return String(userValue).toLowerCase().includes(filterValue.toLowerCase());
+        }
+      }
+      return false;
+    });
   });
 }
 

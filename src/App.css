@@ -19,3 +19,20 @@
 .checked {
   background: rgba(0, 0, 255, 0.2);
 }
+
+.headButtoms {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  padding: 10px;
+}
+
+.popoverCell {
+  width: 150px;
+}
+
+.popverContent {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+}
