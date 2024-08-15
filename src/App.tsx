@@ -208,7 +208,7 @@ export default function App() {
   };
 
   const handleClearInput = () => {
-    setPopoverFilters({} as Filters);
+    setPopoverFilters({});
   };
 
   const handleClearTable = () => {
