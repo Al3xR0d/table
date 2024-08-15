@@ -22,9 +22,7 @@ enum Sort {
   DESC,
 }
 
-interface Filters {
-  [key: string]: string | boolean;
-}
+type Filters = Partial<User>;
 
 const mockGetUsersList = (): Promise<User[]> => {
   return new Promise((res) => {
@@ -89,8 +87,12 @@ export default function App() {
   const [selectedUsersIds, setSelectedUsersIds] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<SortState | null>(null);
-  const [filters, setFilters] = useState<Filters>({} as Filters);
-  const [popoverFilters, setPopoverFilters] = useState<Filters>({} as Filters);
+  const [filters, setFilters] = useState<Filters>({});
+  const [popoverFilters, setPopoverFilters] = useState<Filters>({});
+
+  useEffect(() => {
+    mockGetUsersList().then(setUsers);
+  }, []);
 
   const handleSortedUsers = () => {
     setFilters(popoverFilters);
@@ -104,10 +106,6 @@ export default function App() {
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
   };
-
-  useEffect(() => {
-    mockGetUsersList().then(setUsers);
-  }, []);
 
   const getArrow = () => {
     return sort?.type === Sort.ASC ? <>↑</> : <>↓</>;
@@ -214,8 +212,8 @@ export default function App() {
   };
 
   const handleClearTable = () => {
-    setPopoverFilters({} as Filters);
-    setFilters((prev) => (prev = {} as Filters));
+    setPopoverFilters({});
+    setFilters({});
   };
 
   const popoverInfo = [
@@ -332,7 +330,7 @@ function useSorted(users: User[], sort: SortState | null): User[] {
 function useFilters(users: User[], filter: Filters): User[] {
   return users.filter((user) => {
     return Object.keys(filter).every((item) => {
-      const filterValue = filter[item];
+      const filterValue = filter[item as keyof User];
       let userValue = user[item as keyof User];
       if (filterValue === undefined || filterValue === null || filterValue === '') {
         return true;
